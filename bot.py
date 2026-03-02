@@ -495,7 +495,7 @@ def start_cmd(m):
         bot.reply_to(m, "❌ **FSOCIETY: ДОСТУП ЗАПРЕЩЕН**", parse_mode='Markdown')
         return
     
-    fsociety = """
+        fsociety = """
 ╔════════════════════════════════╗
 ║     ███████╗███████╗ ██████╗   ║
 ║     ██╔════╝██╔════╝██╔═══██╗  ║
@@ -506,7 +506,8 @@ def start_cmd(m):
 ║       NUCLEAR + HUMAN          ║
 ╚════════════════════════════════╝
     """
-        config = optimizer.get_nuclear_config()
+    
+    config = optimizer.get_nuclear_config()  # ← здесь должно быть 4 пробела
     
     info = f"""
 {fsociety}
