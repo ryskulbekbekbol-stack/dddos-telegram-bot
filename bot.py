@@ -762,7 +762,7 @@ def remove_user_cmd(m):
     except:
         bot.reply_to(m, "❌ Использование: /remove <id>")
 
-# ========== ЗАПУСК ==========
+    # ========== ЗАПУСК ==========
 if __name__ == '__main__':
     print("╔════════════════════════════════╗")
     print("║     ███████╗███████╗ ██████╗   ║")
@@ -773,19 +773,44 @@ if __name__ == '__main__':
     print("║     ╚═╝     ╚══════╝ ╚═════╝   ║")
     print("║       NUCLEAR + HUMAN          ║")
     print("╚════════════════════════════════╝")
-    print(f"🤖 Бот: @{bot.get_me().username}")
-    print(f"👥 HUMAN MODE: 4 потока = 10000+ посетителей")
-    print(f"☢️ Ядерный DNS: {optimizer.config['threads']} потоков, x70 усиление")
-    print(f"🌐 DNS серверов: {len(DNS_POOL)}")
+    
+    try:
+        # Проверяем, что бот подключился
+        bot_info = bot.get_me()
+        print(f"🤖 Бот: @{bot_info.username}")
+    except Exception as e:
+        print(f"❌ Ошибка подключения бота: {e}")
+        print("💡 Проверьте токен в переменных окружения")
+    
+    # Проверяем наличие конфига
+    try:
+        config = optimizer.get_nuclear_config()
+        print(f"👥 HUMAN MODE: 4 потока = 10000+ посетителей")
+        print(f"☢️ Ядерный DNS: {config.get('threads', 'N/A')} потоков, x70 усиление")
+    except Exception as e:
+        print(f"⚠️ Не удалось получить конфиг: {e}")
+        print(f"👥 HUMAN MODE: 4 потока = 10000+ посетителей")
+        print(f"☢️ Ядерный DNS: стандартная конфигурация")
+    
+    # Проверяем DNS пул
+    try:
+        print(f"🌐 DNS серверов: {len(DNS_POOL)}")
+    except NameError:
+        print("🌐 DNS серверов: 0 (ошибка инициализации)")
+        DNS_POOL = []  # создаем пустой список, чтобы код не падал
     
     # Удаляем вебхук
     try:
         import requests
         requests.get(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook")
         print("✅ Вебхук удален")
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Не удалось удалить вебхук: {e}")
     
-    bot.infinity_polling()
-    
+    # Запуск
+    print("\n🚀 Запуск бота...")
+    try:
+        bot.infinity_polling()
+    except Exception as e:
+        print(f"❌ Ошибка при запуске polling: {e}")
     
