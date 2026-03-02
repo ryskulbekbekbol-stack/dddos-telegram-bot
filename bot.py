@@ -495,7 +495,8 @@ def start_cmd(m):
         bot.reply_to(m, "❌ **FSOCIETY: ДОСТУП ЗАПРЕЩЕН**", parse_mode='Markdown')
         return
     
-        fsociety = """
+    # ASCII-арт (определяем ДО использования)
+    fsociety = """
 ╔════════════════════════════════╗
 ║     ███████╗███████╗ ██████╗   ║
 ║     ██╔════╝██╔════╝██╔═══██╗  ║
@@ -507,8 +508,13 @@ def start_cmd(m):
 ╚════════════════════════════════╝
     """
     
-    config = optimizer.get_nuclear_config()  # ← здесь должно быть 4 пробела
+    # Получаем конфиг
+    try:
+        config = optimizer.get_nuclear_config()
+    except:
+        config = {'burst_size': 0}
     
+    # Формируем информационное сообщение
     info = f"""
 {fsociety}
 
@@ -522,6 +528,7 @@ def start_cmd(m):
 **ВЫБЕРИ РЕЖИМ:**
 """
     
+    # Отправляем сообщение
     bot.send_message(m.chat.id, info, parse_mode='Markdown', reply_markup=nuclear_keyboard())
 
 @bot.callback_query_handler(func=lambda c: True)
